@@ -19,6 +19,24 @@ import {
   RootConfigService,
 } from '@backstage/backend-plugin-api';
 
+export interface TemplateTask {
+  id: string;
+  status: string;
+  createdAt: string;
+  createdBy: string;
+  spec: {
+    templateInfo: {
+      [x: string]: any;
+      entity: {
+        metadata: {
+          substitute?: { engineering: Record<string, number> };
+        };
+        entityRef: string;
+      };
+    };
+  };
+}
+
 export class ScaffolderClient {
   constructor(
     private readonly logger: LoggerService,
@@ -26,18 +44,25 @@ export class ScaffolderClient {
     private readonly auth: AuthService,
   ) {}
 
-  async fetchTemplatesFromScaffolder() {
+  /**
+   * Fetch a page of templates with pagination support.
+   */
+  async fetchTemplatesFromScaffolder(
+    opts: { page?: number; pageSize?: number } = {},
+  ): Promise<TemplateTask[]> {
+    const { page = 0, pageSize = 50 } = opts;
+    // Resolve backend URL and work around localhost binding
     let backendUrl =
       this.config.getOptionalString('ts.backendUrl') ?? 'http://127.0.0.1:7007';
     backendUrl = backendUrl.replace(
       /(http:\/\/)localhost(:\d+)/g,
       '$1127.0.0.1$2',
-    ); // This changes relates to local setup since there is ERRCONREFUSSED using localhost
+    );
     const templatePath = '/api/scaffolder/v2/tasks';
-    const callUrl = `${backendUrl}${templatePath}`;
+    const offset = page * pageSize;
+    const callUrl = `${backendUrl}${templatePath}?limit=${pageSize}&offset=${offset}`;
     const token = await this.generateBackendToken();
 
-    let templateTaskList = [];
     try {
       const response = await fetch(callUrl, {
         method: 'GET',
@@ -47,27 +72,44 @@ export class ScaffolderClient {
       });
       const data = await response.json();
       this.logger.debug(
-        `Successful call to scaffolder backend. Data:${JSON.stringify(data)}`,
+        `Scaffolder API response (page=${page}, size=${pageSize}): ${JSON.stringify(
+          data,
+        )}`,
       );
+
       if (Object.hasOwn(data, 'error')) {
-        this.logger.error(`Problem retrieving scaffolder tasks`, data.error);
-        return [];
-      } else if (!Object.hasOwn(data, 'tasks')) {
-        this.logger.error(`Tasks key not found in scaffolder tasks call`);
+        this.logger.error('Error retrieving scaffolder tasks', data.error);
         return [];
       }
-      templateTaskList = data.tasks;
+      if (!Array.isArray(data.tasks)) {
+        this.logger.error('Unexpected response: tasks array missing');
+        return [];
+      }
+      return data.tasks;
     } catch (error) {
-      this.logger.error(
-        `Problem retrieving response from url: ${callUrl}`,
-        error ? (error as Error) : undefined,
-      );
+      this.logger.error(`Failed to fetch from ${callUrl}`, error as Error);
       return [];
     }
-    return templateTaskList;
   }
 
-  async generateBackendToken() {
+  /**
+   * Stream all templates, page by page, yielding each task as it arrives.
+   */
+  async *streamTemplatesFromScaffolder(
+    pageSize = 50,
+  ): AsyncGenerator<TemplateTask> {
+    let page = 0;
+    while (true) {
+      const batch = await this.fetchTemplatesFromScaffolder({ page, pageSize });
+      if (!batch.length) break;
+      for (const task of batch) {
+        yield task;
+      }
+      page++;
+    }
+  }
+
+  async generateBackendToken(): Promise<string> {
     const { token } = await this.auth.getPluginRequestToken({
       onBehalfOf: await this.auth.getOwnServiceCredentials(),
       targetPluginId: 'scaffolder',

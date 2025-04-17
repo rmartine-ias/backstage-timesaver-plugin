@@ -29,6 +29,7 @@ ts:
       showInDays: true # if true, the table shows days [boolean]
       hoursPerDay: 8 # how many hours count as a day [number]
   scheduler:
+    parallelProcessing: 50 # optional -> number of tasks to process one thread -> CPU impact: Default to 100
     handler:
       frequency: 'PT1H' # Frequency in ISO 8601 duration format
       timeout: 'PT5M' # Timeout in ISO 8601 duration format

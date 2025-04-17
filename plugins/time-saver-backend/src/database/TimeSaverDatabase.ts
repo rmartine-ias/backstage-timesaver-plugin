@@ -96,6 +96,7 @@ export interface TimeSaverStore {
   getTemplateCount(query: IQuery): Promise<number | void>;
   getTimeSavedSum(query: IQuery): Promise<number | void>;
   getTasksToExclude(): Promise<string[] | undefined | void>;
+  bulkInsertTimeSavings(rows: TemplateTimeSavings[]): Promise<void>;
 }
 
 const migrationsDir = resolvePackagePath(
@@ -943,6 +944,31 @@ export class TimeSaverDatabase implements TimeSaverStore {
       return this.ok(output, 'Data selected successfully');
     } catch (error) {
       return this.fail(error);
+    }
+  }
+
+  async bulkInsertTimeSavings(rows: TemplateTimeSavings[]): Promise<void> {
+    if (!rows || rows.length === 0) {
+      return;
+    }
+
+    // Map each DTO into its persistence shape
+    const persistenceRows: TemplateTimeSavingsDbRow[] = rows.map(r =>
+      TemplateTimeSavingsMap.toPersistence(r),
+    );
+
+    try {
+      // Single multi‐row INSERT via Knex
+      await this.db<TemplateTimeSavingsDbRow>(TIME_SAVINGS_TABLE).insert(
+        persistenceRows,
+      );
+
+      this.logger.debug(
+        `Bulk inserted ${persistenceRows.length} time‐savings records.`,
+      );
+    } catch (error) {
+      // Will log & rethrow
+      this.fail(error, 'Error bulk inserting time‐savings data:');
     }
   }
 }

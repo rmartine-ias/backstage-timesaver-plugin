@@ -105,6 +105,7 @@ If you want to use configurable **scheduler** [Optional]:
 ```yaml
 ts:
   scheduler:
+    parallelProcessing: 100 # optional -> number of tasks to process one thread -> CPU impact: Default to 100
     handler:
       frequency: 'PT1H' # Frequency in ISO 8601 duration format
       timeout: 'PT10M' # Timeout in ISO 8601 duration format

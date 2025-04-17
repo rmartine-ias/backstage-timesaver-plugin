@@ -1,5 +1,11 @@
 # @tduniec/backstage-plugin-time-saver-backend
 
+## 4.1.2
+
+### Patch Changes
+
+- Memory and CPU optimizations in tsHandler.ts
+
 ## 4.1.1
 
 ### Patch Changes
