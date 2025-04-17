@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ScaffolderClient, TemplateTask } from '../api/scaffolderClient';
 import {
-  AuthService,
   LoggerService,
   RootConfigService,
+  AuthService,
 } from '@backstage/backend-plugin-api';
 import { TimeSaverStore } from '../database/TimeSaverDatabase';
-import { ScaffolderClient } from '../api/scaffolderClient';
-import { dateTimeFromIsoDate } from '../utils';
+import { TemplateTimeSavings } from '../database/types';
+import { DateTime } from 'luxon';
 
 export class TimeSaverHandler {
   constructor(
@@ -30,69 +31,74 @@ export class TimeSaverHandler {
     private readonly db: TimeSaverStore,
   ) {}
 
-  async fetchTemplates() {
-    const scaffolderClient = new ScaffolderClient(
-      this.logger,
-      this.config,
-      this.auth,
-    );
-    this.logger.info(`START - Collecting Time Savings data from templates...}`);
+  async fetchTemplates(): Promise<'SUCCESS' | 'FAIL'> {
+    const pageSize =
+      this.config.getOptionalNumber('ts.scheduler.parallelProcessing') ?? 100;
+    this.logger.debug(`SET parallelProcessing of tasks to: ${pageSize}`);
+    const client = new ScaffolderClient(this.logger, this.config, this.auth);
 
+    this.logger.info('START – Collecting Time Savings data from templates');
+    // exclusions
     let excludedSet = new Set<string>();
     try {
       const excluded = await this.db.getTasksToExclude();
-      if (Array.isArray(excluded)) {
-        excludedSet = new Set(excluded);
-      }
+      if (Array.isArray(excluded)) excludedSet = new Set(excluded);
     } catch (e) {
       this.logger.error('Failed to load exclusion list', e as Error);
       return 'FAIL';
     }
 
-    this.logger.debug('Truncating database');
-    await this.db.truncate(); // cleaning table
+    await this.db.truncate(); // cleanup table
 
-    for await (const tpl of scaffolderClient.streamTemplatesFromScaffolder(
-      50,
-    )) {
-      // only completed & not excluded
-      if (tpl.status !== 'completed' || excludedSet.has(tpl.id)) {
-        continue;
+    // fetching templates for scaffolder using PAGE_SIZE
+    for (let page = 0; ; page++) {
+      this.logger.debug(`Fetching page ${page} (size=${pageSize})`);
+      const tasks: TemplateTask[] = await client.fetchTemplatesFromScaffolder({
+        page,
+        pageSize,
+      });
+      if (tasks.length === 0) break;
+
+      const rows: TemplateTimeSavings[] = [];
+      for (const tpl of tasks) {
+        if (tpl.status !== 'completed' || excludedSet.has(tpl.id)) {
+          continue;
+        }
+        const subs =
+          tpl.spec.templateInfo.entity.metadata.substitute?.engineering;
+        if (!subs) {
+          continue;
+        }
+
+        const createdAt = DateTime.fromISO(tpl.createdAt, { setZone: true });
+        if (!createdAt.isValid) {
+          this.logger.error(
+            `Invalid createdAt for template ${tpl.id}: ${tpl.createdAt}`,
+          );
+          continue;
+        }
+
+        for (const [team, timeSaved] of Object.entries<number>(subs)) {
+          rows.push({
+            team,
+            role: '',
+            timeSaved,
+            createdAt,
+            createdBy: tpl.createdBy,
+            templateName: tpl.spec.templateInfo.entityRef,
+            templateTaskStatus: tpl.status,
+            templateTaskId: tpl.id,
+          });
+        }
       }
 
-      this.logger.debug(`Parsing template task ${tpl.id}`);
-
-      const subs =
-        tpl.spec.templateInfo.entity.metadata.substitute?.engineering;
-      if (!subs) {
-        this.logger.debug(`Template ${tpl.id} has no substitute fields`);
-        continue;
-      }
-
-      const createdAt = dateTimeFromIsoDate(tpl.createdAt);
-      if (!createdAt) {
-        this.logger.error(
-          `Invalid createdAt for template ${tpl.id}: ${tpl.createdAt}`,
-        );
-        continue;
-      }
-
-      // insert one row per team
-      for (const [team, timeSaved] of Object.entries<number>(subs)) {
-        await this.db.insert({
-          team,
-          role: '',
-          timeSaved,
-          createdAt,
-          createdBy: tpl.createdBy,
-          templateName: tpl.spec.templateInfo.entityRef,
-          templateTaskStatus: tpl.status,
-          templateTaskId: tpl.id,
-        });
+      if (rows.length) {
+        this.logger.debug(`Inserting ${rows.length} rows`);
+        await this.db.bulkInsertTimeSavings(rows); // one bulk insert per page
       }
     }
 
-    this.logger.info('STOP  - Collecting Time Savings data from templates…');
+    this.logger.info('STOP – Collecting Time Savings data from templates');
     return 'SUCCESS';
   }
 }
