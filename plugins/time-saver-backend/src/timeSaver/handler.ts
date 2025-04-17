@@ -38,72 +38,61 @@ export class TimeSaverHandler {
     );
     this.logger.info(`START - Collecting Time Savings data from templates...}`);
 
-    let templateTaskList = [];
-    let excludedTaskList: string[] = [];
+    let excludedSet = new Set<string>();
     try {
-      templateTaskList = await scaffolderClient.fetchTemplatesFromScaffolder();
-      const excludedTasks = await this.db.getTasksToExclude();
-      if (Array.isArray(excludedTasks)) {
-        excludedTaskList = [...excludedTasks];
+      const excluded = await this.db.getTasksToExclude();
+      if (Array.isArray(excluded)) {
+        excludedSet = new Set(excluded);
       }
-    } catch (error) {
+    } catch (e) {
+      this.logger.error('Failed to load exclusion list', e as Error);
       return 'FAIL';
     }
 
     this.logger.debug('Truncating database');
     await this.db.truncate(); // cleaning table
-    this.logger.debug(
-      `Template task list: ${JSON.stringify(templateTaskList)}`,
-    );
-    templateTaskList = templateTaskList.filter(
-      (single: { status: string; id: string }) =>
-        single.status === 'completed' && !excludedTaskList.includes(single.id),
-    ); // filtering only completed and not excluded tasks
 
-    for (let i = 0; i < templateTaskList.length; i++) {
-      const singleTemplate = templateTaskList[i];
-      this.logger.debug(`Parsing template task ${singleTemplate.id}`);
-      const templateSubstituteData =
-        singleTemplate.spec.templateInfo.entity.metadata.substitute ||
-        undefined;
-      if (templateSubstituteData) {
-        for (const key in templateSubstituteData.engineering) {
-          if (
-            Object.prototype.hasOwnProperty.call(
-              templateSubstituteData.engineering,
-              key,
-            )
-          ) {
-            const value = templateSubstituteData.engineering[key];
-            const createdAt = dateTimeFromIsoDate(singleTemplate.createdAt);
+    for await (const tpl of scaffolderClient.streamTemplatesFromScaffolder(
+      50,
+    )) {
+      // only completed & not excluded
+      if (tpl.status !== 'completed' || excludedSet.has(tpl.id)) {
+        continue;
+      }
 
-            if (!createdAt) {
-              this.logger.error(
-                `Found invalid date when parsing catalog DB. ${JSON.stringify(
-                  singleTemplate,
-                )}`,
-              );
-            }
+      this.logger.debug(`Parsing template task ${tpl.id}`);
 
-            await this.db.insert({
-              team: key,
-              role: '',
-              timeSaved: value,
-              createdAt,
-              createdBy: singleTemplate.createdBy,
-              templateName: singleTemplate.spec.templateInfo.entityRef,
-              templateTaskStatus: singleTemplate.status,
-              templateTaskId: singleTemplate.id,
-            });
-          }
-        }
-      } else {
-        this.logger.debug(
-          `Template ${singleTemplate.id} does not have substitute fields on its body`,
+      const subs =
+        tpl.spec.templateInfo.entity.metadata.substitute?.engineering;
+      if (!subs) {
+        this.logger.debug(`Template ${tpl.id} has no substitute fields`);
+        continue;
+      }
+
+      const createdAt = dateTimeFromIsoDate(tpl.createdAt);
+      if (!createdAt) {
+        this.logger.error(
+          `Invalid createdAt for template ${tpl.id}: ${tpl.createdAt}`,
         );
+        continue;
+      }
+
+      // insert one row per team
+      for (const [team, timeSaved] of Object.entries<number>(subs)) {
+        await this.db.insert({
+          team,
+          role: '',
+          timeSaved,
+          createdAt,
+          createdBy: tpl.createdBy,
+          templateName: tpl.spec.templateInfo.entityRef,
+          templateTaskStatus: tpl.status,
+          templateTaskId: tpl.id,
+        });
       }
     }
-    this.logger.info(`STOP - Collecting Time Savings data from templates...}`);
+
+    this.logger.info('STOP  - Collecting Time Savings data from templates…');
     return 'SUCCESS';
   }
 }
