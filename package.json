@@ -81,5 +81,5 @@
   "files": [
     "plugins/time-saver-backend//migrations/*.{js,d.ts}"
   ],
-  "packageManager": "yarn@4.4.1"
+  "packageManager": "yarn@4.8.1"
 }
