@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { LoggerService } from '@backstage/backend-plugin-api';
+import { LoggerService, SchedulerService } from '@backstage/backend-plugin-api';
 import {
-  DatabaseManager,
   createServiceBuilder,
   loadBackendConfig,
   HostDiscovery,
-  UrlReaders,
 } from '@backstage/backend-common';
+import { DatabaseManager } from '@backstage/backend-defaults/database';
+import { UrlReaders } from '@backstage/backend-defaults/urlReader';
 import { Server } from 'http';
 import { createRouter } from './router';
 import { ConfigReader } from '@backstage/config';
 import {
-  PluginTaskScheduler,
   TaskInvocationDefinition,
   TaskRunner,
 } from '@backstage/backend-tasks';
@@ -59,7 +58,7 @@ export async function startStandaloneServer(
   const taskRunner = new PersistingTaskRunner();
   const scheduler = {
     createScheduledTaskRunner: (_: unknown) => taskRunner,
-  } as unknown as PluginTaskScheduler;
+  } as unknown as SchedulerService;
   //  TODO : Validate createScheduledTaskRunner type
 
   const manager = DatabaseManager.fromConfig(
@@ -69,7 +68,11 @@ export async function startStandaloneServer(
       },
     }),
   );
-  const database = manager.forPlugin('time-saver');
+  const lifecycle = {
+    addShutdownHook: () => {},
+    addStartupHook: () => {},
+  } as any;
+  const database = manager.forPlugin('time-saver', { logger, lifecycle });
   logger.debug('Starting application server...');
   const router = await createRouter({
     logger,
@@ -77,12 +80,13 @@ export async function startStandaloneServer(
     database,
     discovery,
     scheduler,
+    lifecycle,
     urlReader: UrlReaders.default({ logger, config }),
   });
 
   let service = createServiceBuilder(module)
     .setPort(options.port)
-    .addRouter('/time-saver', router);
+    .addRouter('/time-saver', router as any);
   if (options.enableCors) {
     service = service.enableCors({ origin: 'http://localhost:3000' });
   }
