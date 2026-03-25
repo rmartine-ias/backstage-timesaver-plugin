@@ -6,9 +6,9 @@ import {
   ContentHeader,
   SupportButton,
 } from '@backstage/core-components';
-import { AllStatsContent } from '../AllStatsSubPage/AllStatsSubPage';
-import { ByTeamContent } from '../ByTeamSubPage/ByTeamSubPage';
-import { ByTemplateContent } from '../ByTemplateSubPage/ByTemplateSubPage';
+import { AllStatsSubPage } from '../AllStatsSubPage/AllStatsSubPage';
+import { ByTeamSubPage } from '../ByTeamSubPage/ByTeamSubPage';
+import { ByTemplateSubPage } from '../ByTemplateSubPage/ByTemplateSubPage';
 import CustomHeader, {
   HeaderProps,
 } from '../TimeSaverHeader/TimeSaverHeaderComponent';
@@ -43,9 +43,9 @@ export const TimeSaverPageComponent = (props: HeaderProps) => {
             data queries
           </SupportButton>
         </ContentHeader>
-        {selectedTab === 0 && <AllStatsContent />}
-        {selectedTab === 1 && <ByTeamContent />}
-        {selectedTab === 2 && <ByTemplateContent />}
+        {selectedTab === 0 && <AllStatsSubPage />}
+        {selectedTab === 1 && <ByTeamSubPage />}
+        {selectedTab === 2 && <ByTemplateSubPage />}
       </Content>
     </Page>
   );

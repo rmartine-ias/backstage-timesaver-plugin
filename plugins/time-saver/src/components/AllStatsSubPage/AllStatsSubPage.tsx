@@ -1,5 +1,5 @@
 import { Grid, Divider, Paper } from '@material-ui/core';
-import { Content, InfoCard } from '@backstage/core-components';
+import { InfoCard } from '@backstage/core-components';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
@@ -65,7 +65,7 @@ const GaugesContainer = ({
   </Grid>
 );
 
-export function AllStatsContent() {
+export function AllStatsSubPage() {
   const configApi = useApi(configApiRef);
   const hoursPerDay =
     configApi.getOptionalNumber('ts.frontend.table.hoursPerDay') ?? 8;
@@ -99,13 +99,5 @@ export function AllStatsContent() {
         </DateFiltersComponent>
       </InfoCard>
     </LocalizationProvider>
-  );
-}
-
-export function AllStatsSubPage() {
-  return (
-    <Content>
-      <AllStatsContent />
-    </Content>
   );
 }

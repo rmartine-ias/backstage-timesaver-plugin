@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Grid } from '@material-ui/core';
-import { Content, InfoCard } from '@backstage/core-components';
+import { InfoCard } from '@backstage/core-components';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { ByTemplateBarChart } from '../ByTemplateBarCharComponent/ByTemplateBarChartComponent';
@@ -11,7 +11,7 @@ import StatsTable from '../Table/StatsTable';
 import { EmptyTimeSaver } from '../Gauge/EmptyDbContent';
 import { DateFiltersComponent } from '../DateFiltersComponent/DateFiltersComponent';
 
-export function ByTemplateContent() {
+export function ByTemplateSubPage() {
   const [template, setTemplate] = useState('');
 
   return (
@@ -49,13 +49,5 @@ export function ByTemplateContent() {
         </DateFiltersComponent>
       </InfoCard>
     </LocalizationProvider>
-  );
-}
-
-export function ByTemplateSubPage() {
-  return (
-    <Content>
-      <ByTemplateContent />
-    </Content>
   );
 }
