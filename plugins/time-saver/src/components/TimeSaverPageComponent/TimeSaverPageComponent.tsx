@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { useState } from 'react';
+import { SetStateAction, useState } from 'react';
 import { Typography, Grid, Tabs, Tab, Divider, Paper } from '@material-ui/core';
 import {
   InfoCard,
@@ -110,7 +110,7 @@ export const TimeSaverPageComponent = (props: HeaderProps) => {
 
   const handleChange = (
     _event: unknown,
-    _newValue: React.SetStateAction<number>,
+    _newValue: SetStateAction<number>,
   ) => {
     setSelectedTab(_newValue);
   };

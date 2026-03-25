@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
-import {
-  PageBlueprint,
-  createFrontendPlugin,
-} from '@backstage/frontend-plugin-api';
+import { PageBlueprint, createFrontendPlugin } from '@backstage/frontend-plugin-api';
 import TimerIcon from '@material-ui/icons/Timer';
 import { rootRouteRef } from './routes';
 

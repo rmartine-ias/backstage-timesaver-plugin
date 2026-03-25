@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { useState, useEffect } from 'react';
+import { FC, useState, useEffect } from 'react';
 
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { configApiRef, fetchApiRef, useApi } from '@backstage/core-plugin-api';
@@ -40,7 +40,7 @@ interface StatsTableProps {
   dates: IFilterDates;
 }
 
-const StatsTable: React.FC<StatsTableProps> = ({
+const StatsTable: FC<StatsTableProps> = ({
   team,
   templateName,
   dates,
