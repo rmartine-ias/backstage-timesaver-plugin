@@ -24,10 +24,7 @@ import { UrlReaders } from '@backstage/backend-defaults/urlReader';
 import { Server } from 'http';
 import { createRouter } from './router';
 import { ConfigReader } from '@backstage/config';
-import {
-  TaskInvocationDefinition,
-  TaskRunner,
-} from '@backstage/backend-tasks';
+import { TaskInvocationDefinition, TaskRunner } from '@backstage/backend-tasks';
 
 export interface ServerOptions {
   port: number;
@@ -71,7 +68,7 @@ export async function startStandaloneServer(
   const lifecycle = {
     addShutdownHook: () => {},
     addStartupHook: () => {},
-  } as any;
+  };
   const database = manager.forPlugin('time-saver', { logger, lifecycle });
   logger.debug('Starting application server...');
   const router = await createRouter({
@@ -86,7 +83,7 @@ export async function startStandaloneServer(
 
   let service = createServiceBuilder(module)
     .setPort(options.port)
-    .addRouter('/time-saver', router as any);
+    .addRouter('/time-saver', router);
   if (options.enableCors) {
     service = service.enableCors({ origin: 'http://localhost:3000' });
   }
