@@ -26,9 +26,7 @@ import {
   HttpAuthService,
   DatabaseService,
 } from '@backstage/backend-plugin-api';
-import {
-  createLegacyAuthAdapters,
-} from '@backstage/backend-common';
+import { createLegacyAuthAdapters } from '@backstage/backend-common';
 import express from 'express';
 import Router from 'express-promise-router';
 import { PluginInitializer } from './pluginInitializer';
@@ -104,7 +102,7 @@ export const timeSaverPlugin = createBackendPlugin({
           lifecycle,
         );
         const router = plugin.timeSaverRouter;
-        httpRouter.use(router as any);
+        httpRouter.use(router);
 
         httpRouter.addAuthPolicy({
           path: '/migrate',
