@@ -27,6 +27,7 @@ import {
   DatabaseService,
 } from '@backstage/backend-plugin-api';
 import { createLegacyAuthAdapters } from '@backstage/backend-common';
+import { MiddlewareFactory } from '@backstage/backend-defaults/rootHttpRouter';
 import express from 'express';
 import Router from 'express-promise-router';
 import { PluginInitializer } from './pluginInitializer';
@@ -65,6 +66,7 @@ export async function createRouter(
     lifecycle,
   );
   const router = plugin.timeSaverRouter;
+  router.use(MiddlewareFactory.create({ config, logger }).error);
   return router;
 }
 
