@@ -40,11 +40,7 @@ interface StatsTableProps {
   dates: IFilterDates;
 }
 
-const StatsTable: FC<StatsTableProps> = ({
-  team,
-  templateName,
-  dates,
-}) => {
+const StatsTable: FC<StatsTableProps> = ({ team, templateName, dates }) => {
   const [data, setData] = useState<Stat[] | null>(null);
   const [sortModel, setSortModel] = useState<GridSortModel>([
     { field: 'sum', sort: 'asc' },

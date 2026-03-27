@@ -22,11 +22,7 @@ export interface HeaderProps {
   headerLabel?: Record<string, string>;
 }
 
-const CustomHeader: FC<HeaderProps> = ({
-  title,
-  subtitle,
-  headerLabel,
-}) => {
+const CustomHeader: FC<HeaderProps> = ({ title, subtitle, headerLabel }) => {
   return (
     <Header title={title} subtitle={subtitle}>
       {headerLabel &&

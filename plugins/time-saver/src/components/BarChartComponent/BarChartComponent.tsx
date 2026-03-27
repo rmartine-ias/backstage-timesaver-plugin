@@ -44,9 +44,7 @@ interface BarChartProps {
   templateTaskId: string;
 }
 
-export function BarChart({
-  templateTaskId,
-}: BarChartProps): ReactElement {
+export function BarChart({ templateTaskId }: BarChartProps): ReactElement {
   const configApi = useApi(configApiRef);
   const fetchApi = useApi(fetchApiRef);
 

@@ -16,10 +16,7 @@ import CustomHeader, {
 export const TimeSaverPageComponent = (props: HeaderProps) => {
   const [selectedTab, setSelectedTab] = useState(0);
 
-  const handleChange = (
-    _event: unknown,
-    _newValue: SetStateAction<number>,
-  ) => {
+  const handleChange = (_event: unknown, _newValue: SetStateAction<number>) => {
     setSelectedTab(_newValue);
   };
 
@@ -39,8 +36,8 @@ export const TimeSaverPageComponent = (props: HeaderProps) => {
           </Tabs>
           <SupportButton>
             Time Saver plugin retrieves its config from template.metadata and
-            groups it in a dedicated table, then it has a bunch of APIs for
-            data queries
+            groups it in a dedicated table, then it has a bunch of APIs for data
+            queries
           </SupportButton>
         </ContentHeader>
         {selectedTab === 0 && <AllStatsSubPage />}

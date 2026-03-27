@@ -24,11 +24,7 @@ type GroupsResponse = {
   groups: string[];
 };
 
-export function TeamsGauge({
-  dates,
-}: {
-  dates: IFilterDates;
-}): ReactElement {
+export function TeamsGauge({ dates }: { dates: IFilterDates }): ReactElement {
   const configApi = useApi(configApiRef);
   const fetchApi = useApi(fetchApiRef);
   const [data, setData] = useState<GroupsResponse | null>(null);
