@@ -3,7 +3,7 @@ import {
   SubPageBlueprint,
   createFrontendPlugin,
 } from '@backstage/frontend-plugin-api';
-import TimeLapseIcon from '@material-ui/icons/TimeLapse';
+import TimeLapseIcon from '@material-ui/icons/Timelapse';
 
 import { rootRouteRef } from './routes';
 
