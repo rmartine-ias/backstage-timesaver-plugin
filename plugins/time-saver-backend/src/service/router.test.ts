@@ -16,6 +16,8 @@
 import {
   DiscoveryService,
   SchedulerService,
+  SchedulerServiceTaskInvocationDefinition,
+  SchedulerServiceTaskRunner,
 } from '@backstage/backend-plugin-api';
 import { UrlReaders } from '@backstage/backend-defaults/urlReader';
 import { DatabaseManager } from '@backstage/backend-defaults/database';
@@ -24,7 +26,6 @@ import request from 'supertest';
 
 import { createRouter } from './router';
 import { ConfigReader } from '@backstage/config';
-import { TaskInvocationDefinition, TaskRunner } from '@backstage/backend-tasks';
 import { mockServices } from '@backstage/backend-test-utils';
 
 // let catalogRequestOptions: CatalogRequestOptions;
@@ -63,14 +64,14 @@ describe('createRouter', () => {
     logger: mockServices.rootLogger.mock(),
     lifecycle: mockServices.lifecycle.mock(),
   });
-  class PersistingTaskRunner implements TaskRunner {
-    private tasks: TaskInvocationDefinition[] = [];
+  class PersistingTaskRunner implements SchedulerServiceTaskRunner {
+    private tasks: SchedulerServiceTaskInvocationDefinition[] = [];
 
     getTasks() {
       return this.tasks;
     }
 
-    run(task: TaskInvocationDefinition): Promise<void> {
+    run(task: SchedulerServiceTaskInvocationDefinition): Promise<void> {
       this.tasks.push(task);
       return Promise.resolve(undefined);
     }
